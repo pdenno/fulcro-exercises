@@ -542,13 +542,12 @@
 
     (defn sleep [msec] (js/setTimeout (fn []) msec)) 
 
-
     (defresolver my-very-awesome-teams [_ _] ; a global resolver
       {::pc/input  #{}
        ::pc/output [{:teams [:team/id :team/name
                              {:team/players [:player/id :player/name
                                              {:player/address [:address/id]}]}]}]} ; Note that client DB gets :address/city somehow.
-      (sleep 10000)
+      (sleep 10000) ; Does nothing!
       {:teams [#:team{:name "Hikers" :id :hikers}]})
                       
 
@@ -568,7 +567,8 @@
     ;; - Index Explorer tab - do [Load index], explore the index (you might need to scroll up on the right side to see the selected thing)
 
     ;; TODO: TASK 2 - replace loading data during initialization (above) with loading them on-demand, on the button click
-    (defmutation load-data [_]
+    ;; I did it in-line after looking at Holyjak's version.
+    #_(defmutation load-data [_]
       (action [_] (df/load! app7 :teams Team {:target (targeting/replace-at [:all-teams])
                                               :marker :loading-teams})))
 
