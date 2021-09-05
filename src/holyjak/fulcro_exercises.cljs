@@ -595,18 +595,3 @@
 ;;   - Computed props for a callback or parent-visible prop
 ;;   - pre-merge ?! / loading dyn. data for a defsc containing a router x we did not learn routers
 ;;   - Link Query? But not covered by MFT
-
-(comment
-  "@holyjak I just finished the Minimalist Fulcro Tutorial exercises. The experience was immensely useful.
-   One thing beyond basic Fulcro concepts that it helped with is how to use the Fulcro Inspect tools.
-   Specifically, I didn't know how to get data into the EQL tab other than typing it or copying it from somewhere.
-   (This is in the Developers Guide, or in one Tony's videos, but if so, I missed it.)
-   In the exercise comments where you say:
-   ;; From Inspect's Network use the [Send to query] button to show it in the EQL tab, run it.
-   You might add: ;; If you don't see the [Send to query] button, click on a Request.
-
-   @holyjak you asked for suggestions about additional good exercised for the Minimalist Fulcro Tutorial. 
-   I had in mind incremental loading of big trees of data. Incremental loading is probably discussed adequately
-   in the Developer Guide, but not with recursive queries, and incremental expansion of a UI tree, I think.
-   If that seems like too much an edge case, maybe something simpler with trees.") 
-
