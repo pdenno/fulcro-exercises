@@ -33,7 +33,7 @@
 
 ;; ### TODO: Read the namespace docstring for instructions how to work with the exercises ###
 
-(do; comment
+(comment
   (do
     ;; TASK 0.0: Comment this out by replacing the `(do; comment` above with `(comment` and go on to the next exercise.
     ;; LEARNING OBJECTIVES: Get familiar with switching from an exercise to another.
@@ -46,7 +46,7 @@
     (config-and-render! Root00)
     ,))
 
-(comment ; 0 "Try it out!"
+(comment ; do ; comment ; 0 "Try it out!"
   (do
     ;; LEARNING OBJECTIVES: Get familiar with switching to a new exercise and using the hints.
     (defsc Root0 [_ _]
@@ -54,7 +54,7 @@
 
     (config-and-render! Root0)
 
-    (comment ; try running the hint fn 3 times!
+    (do ; comment ; try running the hint fn 3 times!
       (hint 0)
       (hint 0)
       (hint 0))
@@ -82,7 +82,12 @@
     ;; - https://reactjs.org/docs/dom-elements.html#style
     (defsc Root1 [_ _]
       {}
-      "TODO")
+      (dom/div
+       (dom/h1 :.title {:style {:text-align "center"}} "Fulcro is:")
+       (dom/ul
+        (dom/li "Malleable")
+        (dom/li "Full-stack")
+        (dom/li "Well-designed"))))
 
     (config-and-render! Root1)))
 
@@ -100,11 +105,21 @@
     ;; RESOURCES:
     ;; - https://fulcro-community.github.io/guides/tutorial-minimalist-fulcro/#_the_anatomy_of_a_fulcro_component_query_ident_body
     (def value-proposition-points
-      [{:proposition/label "Malleable"} {:proposition/label "Full-stack"} {:proposition/label "Well-designed"}])
+      [{:proposition/label "Malleable, yes."}
+       {:proposition/label "Full-stack, yes."}
+       {:proposition/label "Well-designed, yes"}])
+
+    (defsc Point [_ {:proposition/keys [label]}]
+      {:ident :proposition/label}
+      (dom/li label))
+
+    (def ui-point (comp/factory Point {:keyfn :proposition/label}))
 
     (defsc Root2 [_ _]
       {}
-      "TODO")
+      (dom/div
+       (dom/h1 :.title {:style {:text-align "center"}} "Fulcro is:")
+       (dom/ul (map ui-point value-proposition-points))))
 
     (config-and-render! Root2)
     ; (hint 2)
@@ -113,6 +128,8 @@
     ;; should have a unique "key" prop.>> in the Chrome Console.
     ; (hint 2)
     ,))
+
+(def diag (atom nil))
 
 (comment ; 3 "Externalizing data"
   (do
@@ -127,21 +144,54 @@
     ;;
     ;; RESOURCES:
     ;; - https://fulcro-community.github.io/guides/tutorial-minimalist-fulcro/#_the_anatomy_of_a_fulcro_component_query_ident_body
-    (defsc Root3 [_ _]
-      {}
-      "TODO")
+    (defsc Point [_ {:proposition/keys [label]}]
+      {:query [:proposition/label]
+       :ident :proposition/label}
+      (dom/li label))
 
+    (def ui-point (comp/factory Point {:keyfn :proposition/label}))
+
+    ;; POD The following works, but I doesn't update the client db after I change it and save the file.
+    ;; Further (1) (show-client-db) shows the old db, and (2) Fulcro DB Inspect shows {}. 
+    ;; I can rename Root3 to get it to change.
+    ;; Maybe I could do a merge-component! (where?) to stuff it in the client db.
+    ;; The "OK to pass in the data tree as-is" sort of suggest that.
+    ;; Maybe I'll try to normalize it by hand. NOPE. Maybe I did it wrong.
+    ;; Actually, the goal of the next exercise "Insert data into the client DB with merge/merge!"
+    ;; suggests that maybe this doesn't do anything to the client db (even with :initial-db???). 
+
+    (defsc Root3 [_ props]
+      {:query [:page/heading
+               {:page/value-proposition-points (comp/get-query Point)}]}
+      (reset! diag {:props props})
+      (dom/div
+       (dom/h1 :.title {:style {:text-align "center"}} (:page/heading props))
+       (dom/ul (map ui-point (:page/value-proposition-points props)))))
+    
     (config-and-render!
       Root3
       {:initial-db
        ;; NOTE: Normally the initial-db we pass here should be already normalized but
        ;; since we do not care about normalization and are happy with denormalized data
        ;; in this exercise, it is OK to pass in the data tree as-is.
-       {:page/heading "<3> Fulcro is:"
-        :page/value-proposition-points
-                      [{:proposition/label "Malleable"}
-                       {:proposition/label "Full-stack"}
-                       {:proposition/label "Well-designed"}]}})
+       {:page/heading "Fulcro is:" 
+        :page/value-proposition-points {0 {:proposition/label "Malleable"} ; Nothing shows
+                                        1 {:proposition/label "Full-stack"}
+                                        2 {:proposition/label "Well-designed"}}
+        #_#_:proposition/label {"Malleable"     {:proposition/label "Malleable"}
+                                "Full-stack"    {:proposition/label "Full-stack"}
+                                "Well-designed" {:proposition/label "Well-designed"}}
+
+        #_#_:page/value-proposition-points {"Malleable"     [:proposition/label "Malleable"]
+                                            "Full-stack"    [:proposition/label "Full-stack"]
+                                            "Well-designed" [:proposition/label "Well-designed"]}
+        #_#_:proposition/label {"Malleable"     {:proposition/label "Malleable"}
+                                "Full-stack"    {:proposition/label "Full-stack"}
+                                "Well-designed" {:proposition/label "Well-designed"}}
+        #_#_:page/value-proposition-points
+        [{:proposition/label "Malleable"}
+         {:proposition/label "Full-stack"}
+         {:proposition/label "Well-designed"}]}})
 
     ;(hint 3)
     ;; Tip: Use Fulcro Inspect to see the content of the client DB
@@ -165,19 +215,40 @@
     ;;   are relevant because merge! is very similar to merge-component! but for the Root instead of
     ;;   some child component (and without the need for an ident)
     ;; - https://book.fulcrologic.com/#_using_com_fulcrologic_fulcro_componentsmerge
-    (defsc Root4 [_ _]
-      {}
-      "TODO")
+    (defsc Point [_ {:proposition/keys [label]}]
+      {:query [:proposition/label]
+       :ident :proposition/label}
+      (dom/li label))
 
+    (def ui-point (comp/factory Point {:keyfn :proposition/label}))
+    
+    (defsc Root4 [_ props]
+      {:query [:page/heading
+               {:page/value-proposition-points (comp/get-query Point)}]}
+      (reset! diag {:props props})
+      (dom/div
+       (dom/h1 :.title {:style {:text-align "center"}} (:page/heading props))
+       (dom/ul (map ui-point (:page/value-proposition-points props)))))
+    
+    (def page-data ; the "data tree"
+      {:page/heading "Fulcro is:"
+       :page/value-proposition-points
+       [{:proposition/label "Malleable"}
+        {:proposition/label "Full-stack"}
+        {:proposition/label "Well-designed!"}]}) ; Now updating works!
+  
     (def app4 (config-and-render! Root4))
 
     ;; What do you think the client DB will look like? Think, write it down, then check it
+    ;; [POD: I did that above, but perhaps I did it wrong!]
     ;; using Fulcro Inspect - DB (or `(show-client-db)`)
-    (merge/merge! app4 nil nil) ; TODO Implement
+    (merge/merge! app4 page-data {:page/heading {:page/value-proposition-points [:proposiiton/label]}})
+    (app/schedule-render! app4) ; merge! only inserts the data, does not tell the app to re-render
     ; (hint 4)
     ; (hint 4)
     ,))
 
+;;; POD: Got it on my first try, no hints, no debugging! Maybe there is hope for me!
 (comment ; 5 "Normalization and merge-component!"
   (do
     ;; TASK:
@@ -207,20 +278,20 @@
       (p "City: " city))
 
     (defsc Player [_ {:player/keys [name address]}]
-      {:query [:player/id :player/name :player/address]}
+      {:query [:player/id :player/name {:player/address (comp/get-query Address)}]}
       (li "name: " name " lives at: " ((comp/factory Address) address)))
 
     (def ui-player (comp/factory Player {:keyfn :player/id}))
 
     (defsc Team [_ {:team/keys [name players]}]
-      {:query [:team/id :team/name :team/players]}
+      {:query [:team/id :team/name {:team/players (comp/get-query Player)}]}
       (div (h2 "Team " name ":")
            (ol (map ui-player players))))
 
     (def ui-team (comp/factory Team {:keyfn :team/id}))
 
     (defsc Root5 [_ {teams :teams}]
-      {:query [:teams]} ; NOTE: This is on purpose incomplete
+      {:query [{:teams (comp/get-query Team)}]}
       (div
         (h1 "Teams")
         (p "Debug: teams = " (dom/code (pr-str teams)))
@@ -228,7 +299,8 @@
 
     (def data-tree
       "The data that our UI should display"
-      {:teams [#:team{:name "Hikers" :id :hikers
+      {:teams [#:team{:name "Hikers"
+                      :id :hikers
                       :players [#:player{:name "Jon" :address #:address{:city "Oslo"} :id 1}
                                 #:player{:name "Ola" :address #:address{:city "Trondheim"} :id 2}]}]})
 
@@ -238,7 +310,14 @@
     ;; Now:
     ;; 1. Uncomment, complete, and run the merge/merge! call below to insert the data-tree into
     ;;    the client DB. Check the UI shows it.
-    (comment (merge/merge! ...))
+    (do (merge/merge! app5
+                      data-tree
+                      {:teams [:team/name
+                               :team/id
+                               {:team/players [:player/name
+                                               :player/id
+                                               {:player/address [:address/city]}]}]})
+        (app/schedule-render! app5))
     ; (hint 5)
     ; (hint 5)
 
@@ -271,9 +350,10 @@
     ;;
     ;; Your task is thus to implement the mutations `set-players-checked` and `delete-selected`,
     ;; and trigger them in the :onClick handlers below instead of the current `println`.
-    ;; Keep to the suggested inputs of those mutations, to make comparison easier.
+    ;; Keep to the suggested inputs of those mutations, to make comparison easier.   ; POD I think he means the things that look like args.
+    ;; POD I'm guessing that 'delete all' DOESN'T mean delete the team too (in which case the UI might be better to show 'delete team').
     ;;
-    ;; (Note: We could have structured the mutations in a simpler way. But this one
+    ;; (Note: We could have structured the mutations in a simpler way. But this one  
     ;; provides you a sufficient challenge.)
     ;;
     ;; Tips:
@@ -294,8 +374,9 @@
     ;; - https://fulcro-community.github.io/guides/tutorial-minimalist-fulcro/#_changing_global_data_and_performing_remote_calls_mutations
     ;; - https://fulcro-community.github.io/guides/tutorial-minimalist-fulcro/#def-clientdb
     ;; - Fulcro Inspect and its parts: https://blog.jakubholy.net/2020/troubleshooting-fulcro/#_know_your_tools
+    (declare app6)
 
-    (defn make-player->team
+     (defn make-player->team
       "A helper function to create a 'lookup' so that we can easily find a player's team.
       You might - or not :-) - find it useful in your mutations.
 
@@ -309,17 +390,22 @@
                    players :team/players} teams
                   [_ player-id]           players]
               [player-id team-id])))
-
+    
     (defsc Player [this {:keys [player/id player/name ui/checked?]}]
       {:query [:player/id :player/name :ui/checked?]
-       :ident :player/id}
+       :ident  :player/id}
       (li
         (input {:type    "checkbox"
                 :checked (boolean checked?)
-                :onClick #(println "TODO: trigger the mutation `(set-players-checked {:players [id] :value (not checked?)})`")})
+                :onClick #(comp/transact! this [`(set-players-checked {:players [~id] :value ~(not checked?)})])})
         name))
 
     (def ui-player (comp/factory Player {:keyfn :player/id}))
+
+    (defmutation set-players-checked [{:keys [players value]}]
+      (action [{:keys [state]}]
+              (doseq [p players]
+                (swap! state #(assoc-in % [:player/id p :ui/checked?] value)))))
 
     (defsc Team [this {:team/keys [name players] checked? :ui/checked?}]
       {:query [:team/id :team/name :ui/checked? {:team/players (comp/get-query Player)}]
@@ -327,19 +413,32 @@
       (let [all-checked? (and (seq players) (every? :ui/checked? players))]
         (div (h2 "Team " name ":")
              (label (input {:type    "checkbox"
-                            :checked all-checked?
-                            :onClick #(println "TODO: trigger the mutation `(set-players-checked {:players (map :player/id players) :value   (not all-checked?)})`")})
+                            :checked  all-checked?
+                            :onClick #(comp/transact! this [`(set-players-checked {:players ~(map :player/id players)
+                                                                                   :value   ~(not all-checked?)})])})
                     "Select all")
              (ol (map ui-player players)))))
 
     (def ui-team (comp/factory Team {:keyfn :team/id}))
+
+    ;; I decided to interpret the instructions as meaning that "delete all" deletes all players, not the team. 
+    (defmutation delete-selected [_]
+      (action [{:keys [state]}]
+              (let [p2t (->> state deref :team/id vals make-player->team)]
+                (println "LOG: p2t=" p2t)
+                (doseq [dplayer (->> state deref :player/id vals (filter :ui/checked?) (map :player/id))]
+                  (swap! state (fn [s] (update s :player/id #(dissoc % dplayer))))
+                  (swap! state (fn [s] (update-in s [:team/id (p2t dplayer) :team/players]
+                                                  (fn [players] (vec (remove #(= [:player/id dplayer] %) players))))))))))
+                
+
 
     (defsc Root6 [this {teams :teams}]
       {:query [{:teams (comp/get-query Team)}]}
       (form
         (h1 "Teams")
         (button {:type "button"
-                 :onClick #(println "TODO: trigger the mutation `(delete-selected nil)`")}  ; TODO implement
+                 :onClick #(comp/transact! this [`(delete-selected nil)])}
                 "Delete selected")
         (map ui-team teams)))
 
@@ -352,17 +451,16 @@
                         #:player{:id 2 :name "Ola"}
                         #:player{:id 3 :name "Anne"}]}
        #:team{:name "Bikers" :id :bikers
-              :players [#:player{:id 4 :name "Cyclotron"}]}])
+              :players [#:player{:id 4 :name "Cyclotron"}]}])))
 
-    ,))
 
-(comment ; 7 load!-ing data from a remote
+(do ; comment ; 7 load!-ing data from a remote
   (do
     ;; TASK:
     ;; Learn how to load! data and practice using Fulcro Inspect
     ;; This is similar to #5 but with merge-component! replaced with load!
     ;; We now run a mock, in-browser server (with a real Pathom).
-    ;; Read on to find the task your should do.
+    ;; Read on to find the task your should do. ; POD "your" => "you"
     ;;
     ;; LEARNING OBJECTIVES:
     ;; - Use load!, with targeting
@@ -382,11 +480,12 @@
       {:query [:address/city]
        :ident :address/city}
       (p "City: " city))
+    ;; (def ui-address (comp/factory Address {:keyfn :address/city}) ; Not needed see NOTE1 below!
 
     (defsc Player [_ {:player/keys [name address]}]
       {:query [:player/id :player/name {:player/address (comp/get-query Address)}]
        :ident :player/id}
-      (li "Player: " name " lives at: " ((comp/factory Address) address)))
+      (li "Player: " name " lives at: " ((comp/factory Address) address))) ; <=== POD NOTE1: (BTW no :keyfn required; no map)
 
     (def ui-player (comp/factory Player {:keyfn :player/id}))
 
@@ -398,60 +497,91 @@
 
     (def ui-team (comp/factory Team {:keyfn :team/id}))
 
-    (defsc Root7 [this {teams :teams :as props}]
-      {:query [{:teams (comp/get-query Team)}]}
+    (defsc Root7 [this {teams :all-teams :as props}]
+      {:query [{:all-teams (comp/get-query Team)} [df/marker-table :loading-teams]]}
       (div
-        ;; Code for task 2 (described further down) - un-comment and complete this code:
-        ;(button {:type "button"
-        ;         :onClick #(println "df/load! the data from here")} "Load data")
-        (let [loading? false] ; scaffolding for TASK 5
+       ;; Code for task 2 (described further down)
+       (button {:type "button"
+                ;; Holyjak's solution is more elegant:
+                 :onClick #(df/load! this :teams Team {:target (targeting/replace-at [:all-teams])
+                                                       :marker :loading-teams})
+               ;; My solution. 
+               #_ #(comp/transact! this [`(load-data nil)])}
+                "Load data")
+        (let [marker (get props [df/marker-table :loading-teams])]
           (cond
-            loading? (p "Loading...")
-            ;; ...
+            (df/loading? marker) (p "Loading...")
+            (df/failed?  marker) (p "Loading teams failed.")
             :else
             (comp/fragment (h1 "Teams")
                            (map ui-team teams))))))
-
-    ;; --- "Backend" resolvers to feed data to load! ---
-    (defresolver my-very-awesome-teams [_ _] ; a global resolver
-      {::pc/input  #{}
-       ::pc/output [{:teams [:team/id :team/name
-                             {:team/players [:player/id :player/name 
-                                             ;; NOTE: We need this 👇 instead of just `:player/address` so that autocomplete
-                                             ;; in Fulcro Inspect - EQL understands this is address and can get to id, city
-                                             {:player/address [:address/id]}]}]}]}
-      {:teams [#:team{:name "Hikers" :id :hikers
-                      :players [#:player{:id 1 :name "Luna" :address {:address/id 1}}
-                                #:player{:id 2 :name "Sol" :address {:address/id 2}}]}]})
-
-    (defresolver address [_ {id :address/id}] ; an ident resolver
+    
+    ;; POD I think it is called an 'ident resolver' because it takes an ident and returns an object.
+    (defresolver address [_ {id :address/id}] ; an ident resolver ; POD Note 'let destructuring' not 'keys destructuring'.
       {::pc/input #{:address/id}
        ::pc/output [:address/id :address/city]}
+      (println "LOG: Running the address resolver, id=" id)
       (case id
         1 #:address{:id 1 :city "Oslo"}
         2 #:address{:id 2 :city "Trondheim"}))
 
-    ;; Render the app, with a backend using these resolvers
-    (def app7 (config-and-render! Root7 {:resolvers [address my-very-awesome-teams]}))
+    ;; Task 3 Resolvers
+    (defresolver team [_ {:team/keys [id]}] ; an ident resolver
+      {::pc/input #{:team/id}
+       ::pc/output [:team/id :team/name :team/players]}
+      (println "LOG: Running the team resolver, id=" id)
+      (case id
+        :hikers #:team{:id :hikers :name "Hikers" :team/players [{:player/id 1} {:player/id 2}]}))
+
+    (defresolver player [_ {:player/keys [id]}] ; an ident resolver 
+      {::pc/input #{:player/id}
+       ::pc/output [:player/id :player/name :player/address]}
+      (case id
+        1 #:player{:id 1 :name "Luna" :address {:address/id 1}}
+        2 #:player{:id 2 :name "Sol"  :address {:address/id 2}}))
+
+    (defn sleep [msec] (js/setTimeout (fn []) msec)) 
+
+
+    (defresolver my-very-awesome-teams [_ _] ; a global resolver
+      {::pc/input  #{}
+       ::pc/output [{:teams [:team/id :team/name
+                             {:team/players [:player/id :player/name
+                                             {:player/address [:address/id]}]}]}]} ; Note that client DB gets :address/city somehow.
+      (sleep 10000)
+      {:teams [#:team{:name "Hikers" :id :hikers}]})
+                      
+
+    ;; Render the app, with a backend using these resolvers (Task 3 resolvers)
+    (def app7 (config-and-render! Root7 {:resolvers [address team player my-very-awesome-teams]})) ; <==== How to do "browser-based server"
 
     ;; TODO: TASK 1 - use `df/load!` to load data from the my-very-awesome-teams
-    (println "TODO: df/load! should be invoked here...")
+    ;(df/load! app7 :teams Team)
     ;; (Remember `(hint 7)` when in need.)
     ;; Now check Fulcro Inspect - the Transactions and Network tabs and explore the load there.
     ;; From Inspect's Network use the [Send to query] button to show it in the EQL tab, run it
     ;; from there. Modify, run again.
+    ;; POD What he means is that if you click on a query in the Network tab, you get a form with the "Send to query" button.
+    ;;     When you click that button, it puts you in the EQL tab with the query ready to go! VERY NICE! (Mention this on slack)
+
     ;; - EQL tab - do [(Re)load Pathom Index] to get auto-completion for the queries and try to type some
     ;; - Index Explorer tab - do [Load index], explore the index (you might need to scroll up on the right side to see the selected thing)
 
     ;; TODO: TASK 2 - replace loading data during initialization (above) with loading them on-demand, on the button click
+    (defmutation load-data [_]
+      (action [_] (df/load! app7 :teams Team {:target (targeting/replace-at [:all-teams])
+                                              :marker :loading-teams})))
 
     ;; TODO: TASK 3 - split ident resolvers for a team and a player out of `my-very-awesome-teams`, as we did for address;
+    ;; POD See Task 3 Resolvers above.
     ;;       Then play with them using Fulcro Inspect's EQL tab - fetch just the name of a particular person; ask for
     ;;       a property that does not exist (and check both the EQL tab and the Inspect's Network tab) - what does it look like?
+    ;; POD A: [{[:player/id 1] [:player/name]}] ==> {[:player/id 1] {:player/name "Luna"}}
 
     ;; TODO: TASK 4 - use targeting to fix a mismatch between a resolver and the UI: in `Root7`, rename `:teams` to `:all-teams`; how
     ;;       do you need to change the load! for this to work as before?
     ;;       Check in the Client DB that the changed data look as expected.
+    ;; POD Done. 
 
     ;; TODO: TASK 5 - Use Fulcro load markers to display "Loading..." instead of the content while loading the data (see Root7)
 
@@ -465,3 +595,18 @@
 ;;   - Computed props for a callback or parent-visible prop
 ;;   - pre-merge ?! / loading dyn. data for a defsc containing a router x we did not learn routers
 ;;   - Link Query? But not covered by MFT
+
+(comment
+  "@holyjak I just finished the Minimalist Fulcro Tutorial exercises. The experience was immensely useful.
+   One thing beyond basic Fulcro concepts that it helped with is how to use the Fulcro Inspect tools.
+   Specifically, I didn't know how to get data into the EQL tab other than typing it or copying it from somewhere.
+   (This is in the Developers Guide, or in one Tony's videos, but if so, I missed it.)
+   In the exercise comments where you say:
+   ;; From Inspect's Network use the [Send to query] button to show it in the EQL tab, run it.
+   You might add: ;; If you don't see the [Send to query] button, click on a Request.
+
+   @holyjak you asked for suggestions about additional good exercised for the Minimalist Fulcro Tutorial. 
+   I had in mind incremental loading of big trees of data. Incremental loading is probably discussed adequately
+   in the Developer Guide, but not with recursive queries, and incremental expansion of a UI tree, I think.
+   If that seems like too much an edge case, maybe something simpler with trees.") 
+
